@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-world-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-world
+  template:
+    metadata:
+      labels:
+        app: hello-world
+    spec:
+      containers:
+      - name: hello-world
+        image: ghcr.io/stefanprodan/podinfo:5.0.3 # {"$imagepolicy": "flux-system:hello-world-app-policy"}
+        ports:
+        - containerPort: 9898
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-world-service
+  namespace: default
+spec:
+  selector:
+    app: hello-world
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 9898
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hello-world-ingress
+  namespace: default
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: example2.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hello-world-service
+                port:
+                  number: 80
